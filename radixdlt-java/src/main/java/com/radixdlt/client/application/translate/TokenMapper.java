@@ -2,7 +2,6 @@ package com.radixdlt.client.application.translate;
 
 import com.radixdlt.client.application.actions.CreateTokenAction;
 import com.radixdlt.client.application.actions.CreateTokenAction.TokenSupplyType;
-import com.radixdlt.client.atommodel.quarks.FungibleQuark.FungibleType;
 import com.radixdlt.client.atommodel.tokens.TokenClassReference;
 import com.radixdlt.client.atommodel.tokens.TokenPermission;
 import com.radixdlt.client.core.atoms.particles.SpunParticle;
@@ -24,15 +23,11 @@ public class TokenMapper {
 			return Collections.emptyList();
 		}
 
-		final TokenPermission mintPermissions;
-		final TokenPermission burnPermissions;
-
+		final MintPermissions mintPermissions;
 		if (tokenCreation.getTokenSupplyType().equals(TokenSupplyType.FIXED)) {
-			mintPermissions = TokenPermission.SAME_ATOM_ONLY;
-			burnPermissions = TokenPermission.NONE;
+			mintPermissions = MintPermissions.SAME_ATOM_ONLY;
 		} else if (tokenCreation.getTokenSupplyType().equals(TokenSupplyType.MUTABLE)) {
-			mintPermissions = TokenPermission.TOKEN_OWNER_ONLY;
-			burnPermissions = TokenPermission.TOKEN_OWNER_ONLY;
+			mintPermissions = MintPermissions.OWNER_ONLY;
 		} else {
 			throw new IllegalStateException("Unknown supply type: " + tokenCreation.getTokenSupplyType());
 		}
@@ -42,11 +37,7 @@ public class TokenMapper {
 				tokenCreation.getName(),
 				tokenCreation.getIso(),
 				tokenCreation.getDescription(),
-				new EnumMap<FungibleType, TokenPermission>(FungibleType.class) {{
-					this.put(FungibleType.MINTED, mintPermissions);
-					this.put(FungibleType.BURNED, burnPermissions);
-					this.put(FungibleType.TRANSFERRED, TokenPermission.ALL);
-				}},
+				mintPermissions,
 				null
 		);
 		OwnedTokensParticle minted = new OwnedTokensParticle(
