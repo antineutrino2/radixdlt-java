@@ -22,13 +22,6 @@ import java.util.Set;
 
 @SerializerId2("TOKENCLASSPARTICLE")
 public class TokenParticle extends Particle {
-	public enum MintPermissions {
-		GENESIS_ONLY,
-		SAME_ATOM_ONLY,
-		OWNER_ONLY,
-		POW
-	}
-
 	@JsonProperty("iso")
 	@DsonOutput(Output.ALL)
 	private String iso;
