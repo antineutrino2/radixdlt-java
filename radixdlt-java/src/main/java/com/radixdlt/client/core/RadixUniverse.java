@@ -160,7 +160,7 @@ public final class RadixUniverse {
 		config.getGenesis().forEach(atom ->
 			atom.addresses()
 				.map(this::getAddressFrom)
-				.forEach(addr -> inMemoryAtomStore.store(addr, AtomObservation.storeAtom(atom)))
+				.forEach(addr -> inMemoryAtomStore.store(addr, AtomObservation.stored(atom)))
 		);
 
 		// Hooking up the default configuration

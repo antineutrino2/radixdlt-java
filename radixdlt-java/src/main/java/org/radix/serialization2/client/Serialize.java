@@ -5,6 +5,7 @@ import com.radixdlt.client.core.address.RadixUniverseConfig;
 import com.radixdlt.client.core.atoms.Atom;
 import com.radixdlt.client.atommodel.tokens.TokenClassReference;
 import com.radixdlt.client.atommodel.tokens.FeeParticle;
+import com.radixdlt.client.core.atoms.AtomEvent;
 import com.radixdlt.client.core.atoms.particles.Particle;
 import com.radixdlt.client.core.atoms.particles.SpunParticle;
 import com.radixdlt.client.atommodel.message.MessageParticle;
@@ -47,6 +48,7 @@ public final class Serialize {
 		private static Collection<Class<?>> getClasses() {
 			return Arrays.asList(
 				Atom.class,
+				AtomEvent.class,
 				RadixAddress.class,
 				Particle.class,
 				SpunParticle.class,
