@@ -1,18 +1,19 @@
 package com.radixdlt.client.core.ledger;
 
-import com.radixdlt.client.atommodel.accounts.RadixAddress;
 import com.radixdlt.client.core.atoms.AtomObservation;
+import com.radixdlt.client.core.network.WebSocketException;
+import java.util.function.Function;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.radixdlt.client.atommodel.accounts.RadixAddress;
 import com.radixdlt.client.core.atoms.AtomValidationException;
 import com.radixdlt.client.core.network.AtomQuery;
 import com.radixdlt.client.core.network.IncreasingRetryTimer;
 import com.radixdlt.client.core.network.RadixJsonRpcClient;
-import com.radixdlt.client.core.network.WebSocketException;
 import io.reactivex.Observable;
 import io.reactivex.Single;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.function.Function;
 
 /**
  * Module responsible for selecting a node and fetching atoms and retrying if necessary.

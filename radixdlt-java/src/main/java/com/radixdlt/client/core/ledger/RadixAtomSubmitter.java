@@ -1,9 +1,9 @@
 package com.radixdlt.client.core.ledger;
 
+import com.radixdlt.client.core.network.WebSocketException;
 import java.util.Set;
 import java.util.function.Function;
 
-import com.radixdlt.client.core.network.WebSocketException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
