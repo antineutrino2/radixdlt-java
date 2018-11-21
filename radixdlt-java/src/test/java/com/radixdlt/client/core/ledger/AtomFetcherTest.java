@@ -4,7 +4,6 @@ import com.radixdlt.client.core.atoms.AtomObservation;
 import com.radixdlt.client.core.network.WebSocketException;
 import java.util.function.Function;
 
-import com.radixdlt.client.core.network.WebSocketException;
 import org.junit.Test;
 import org.radix.common.ID.EUID;
 
