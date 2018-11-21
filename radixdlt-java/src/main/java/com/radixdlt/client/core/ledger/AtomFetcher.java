@@ -39,6 +39,8 @@ public class AtomFetcher {
 				LOGGER.warn("Error on getAllAtoms: {}", address);
 			})
 			.retryWhen(new IncreasingRetryTimer(WebSocketException.class))
+			// FIXME: Remove the following for now as we will initially assume full trust of server client connects with
+			/*
 			.filter(atomObservation -> {
 				if (atomObservation.isStore()) {
 					LOGGER.info("Received atom " + atomObservation.getAtom().getHid());
@@ -54,6 +56,7 @@ public class AtomFetcher {
 					return true;
 				}
 			})
+			*/
 			.doOnSubscribe(atoms -> LOGGER.info("Atom Query Subscribe: address({})", address));
 	}
 }

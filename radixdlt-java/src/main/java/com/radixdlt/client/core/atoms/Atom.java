@@ -70,6 +70,10 @@ public final class Atom extends SerializableObject {
 		);
 	}
 
+	public Stream<SpunParticle> spunParticles() {
+		return this.getSpunParticles().stream();
+	}
+
 	public List<SpunParticle> getSpunParticles() {
 		return particles != null ? particles : Collections.emptyList();
 	}

@@ -17,7 +17,8 @@ import com.radixdlt.client.atommodel.tokens.TokenParticle;
 import com.radixdlt.client.atommodel.tokens.TokenPermission;
 import com.radixdlt.client.core.atoms.particles.Particle;
 import com.radixdlt.client.core.atoms.particles.Spin;
-import com.radixdlt.client.core.atoms.particles.SpunParticle;
+
+import com.radixdlt.client.core.ledger.TransitionedParticle;
 
 /**
  * Reduces particles at an address into concrete Tokens and their states
@@ -29,10 +30,10 @@ public class TokenReducer implements ParticleReducer<Map<TokenClassReference, To
 	}
 
 	@Override
-	public Map<TokenClassReference, TokenState> reduce(Map<TokenClassReference, TokenState> state, SpunParticle s) {
-		Particle p = s.getParticle();
+	public Map<TokenClassReference, TokenState> reduce(Map<TokenClassReference, TokenState> state, TransitionedParticle t) {
+		Particle p = t.getParticle();
 		if (!(p instanceof TokenParticle
-			|| (p instanceof OwnedTokensParticle && s.getSpin() == Spin.UP
+			|| (p instanceof OwnedTokensParticle && t.getSpinTo() == Spin.UP
 				&& ((OwnedTokensParticle) p).getType() != FungibleType.TRANSFERRED))) {
 			return state;
 		}

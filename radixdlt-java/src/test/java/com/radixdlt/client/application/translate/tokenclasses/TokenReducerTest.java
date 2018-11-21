@@ -1,20 +1,21 @@
 package com.radixdlt.client.application.translate.tokenclasses;
 
+import com.radixdlt.client.atommodel.tokens.TokenClassReference;
+import com.radixdlt.client.atommodel.tokens.TokenParticle;
+import com.radixdlt.client.atommodel.tokens.OwnedTokensParticle;
+import com.radixdlt.client.atommodel.quarks.FungibleQuark;
+import com.radixdlt.client.core.ledger.TransitionedParticle;
+import org.junit.Test;
+
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Map;
 
-import org.junit.Test;
 import org.radix.utils.UInt256;
 
 import com.radixdlt.client.application.translate.tokenclasses.TokenState.TokenSupplyType;
-import com.radixdlt.client.atommodel.quarks.FungibleQuark;
 import com.radixdlt.client.atommodel.quarks.FungibleQuark.FungibleType;
-import com.radixdlt.client.atommodel.tokens.OwnedTokensParticle;
-import com.radixdlt.client.atommodel.tokens.TokenClassReference;
-import com.radixdlt.client.atommodel.tokens.TokenParticle;
 import com.radixdlt.client.atommodel.tokens.TokenPermission;
-import com.radixdlt.client.core.atoms.particles.SpunParticle;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -32,7 +33,7 @@ public class TokenReducerTest {
 		when(tokenParticle.getTokenPermissions()).thenReturn(Collections.singletonMap(FungibleType.MINTED, TokenPermission.SAME_ATOM_ONLY));
 
 		TokenReducer tokenReducer = new TokenReducer();
-		Map<TokenClassReference, TokenState> state = tokenReducer.reduce(Collections.emptyMap(), SpunParticle.up(tokenParticle));
+		Map<TokenClassReference, TokenState> state = tokenReducer.reduce(Collections.emptyMap(), TransitionedParticle.n2u(tokenParticle));
 		assertThat(state.get(tokenRef)).isEqualTo(
 			new TokenState("Name", "ISO", "Desc", BigDecimal.ZERO, TokenSupplyType.FIXED)
 		);
@@ -55,8 +56,9 @@ public class TokenReducerTest {
 		when(minted.getTokenClassReference()).thenReturn(tokenRef);
 
 		TokenReducer tokenReducer = new TokenReducer();
-		Map<TokenClassReference, TokenState> state1 = tokenReducer.reduce(Collections.emptyMap(), SpunParticle.up(tokenParticle));
-		Map<TokenClassReference, TokenState> state2 = tokenReducer.reduce(state1, SpunParticle.up(minted));
+
+		Map<TokenClassReference, TokenState> state1 = tokenReducer.reduce(Collections.emptyMap(), TransitionedParticle.n2u(tokenParticle));
+		Map<TokenClassReference, TokenState> state2 = tokenReducer.reduce(state1, TransitionedParticle.n2u(minted));
 		assertThat(state2.get(tokenRef)).isEqualTo(
 			new TokenState(
 				"Name",
