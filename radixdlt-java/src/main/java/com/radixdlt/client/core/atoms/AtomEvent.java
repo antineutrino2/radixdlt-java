@@ -23,6 +23,11 @@ public class AtomEvent extends SerializableObject {
 		this.atom = null;
 	}
 
+	public AtomEvent(Atom atom, AtomEventType type) {
+		this.atom = atom;
+		this.type = type;
+	}
+
 	public Atom getAtom() {
 		return atom;
 	}

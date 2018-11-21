@@ -1,6 +1,8 @@
 package com.radixdlt.client.core.network;
 
 import com.radixdlt.client.atommodel.accounts.RadixAddress;
+import com.radixdlt.client.core.atoms.AtomEvent;
+import com.radixdlt.client.core.atoms.AtomEvent.AtomEventType;
 import org.junit.Test;
 import org.radix.common.ID.EUID;
 import org.radix.serialization2.DsonOutput.Output;
@@ -193,11 +195,12 @@ public class RadixJsonRpcClientTest {
 			JsonObject params = new JsonObject();
 			params.addProperty("subscriberId", subscriberId);
 
-			JsonArray atoms = new JsonArray();
+			JsonArray atomEvents = new JsonArray();
 			Atom atomObject = new Atom(null);
-			JsonElement atom = parser.parse(Serialize.getInstance().toJson(atomObject, Output.API));
-			atoms.add(atom);
-			params.add("atoms", atoms);
+			AtomEvent atomEvent = new AtomEvent(atomObject, AtomEventType.STORE);
+			JsonElement atomEventJson = parser.parse(Serialize.getInstance().toJson(atomEvent, Output.API));
+			atomEvents.add(atomEventJson);
+			params.add("atomEvents", atomEvents);
 			params.addProperty("isHead", false);
 
 			notification.add("params", params);
@@ -247,11 +250,12 @@ public class RadixJsonRpcClientTest {
 				notification.addProperty("method", "Atoms.subscribeUpdate");
 				JsonObject params = new JsonObject();
 				params.addProperty("subscriberId", subscriberId);
+				JsonArray atomEvents = new JsonArray();
 				Atom atomObject = new Atom(null);
-				JsonElement atom = parser.parse(Serialize.getInstance().toJson(atomObject, Output.API));
-				JsonArray atoms = new JsonArray();
-				atoms.add(atom);
-				params.add("atoms", atoms);
+				AtomEvent atomEvent = new AtomEvent(atomObject, AtomEventType.STORE);
+				JsonElement atomEventJson = parser.parse(Serialize.getInstance().toJson(atomEvent, Output.API));
+				atomEvents.add(atomEventJson);
+				params.add("atomEvents", atomEvents);
 
 				notification.add("params", params);
 
