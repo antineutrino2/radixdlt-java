@@ -7,7 +7,6 @@ import com.radixdlt.client.atommodel.quarks.AccountableQuark;
 import com.radixdlt.client.atommodel.quarks.NonFungibleQuark;
 import com.radixdlt.client.atommodel.quarks.OwnableQuark;
 import com.radixdlt.client.core.atoms.particles.Particle;
-import com.radixdlt.client.core.crypto.ECPublicKey;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.stream.Collectors;

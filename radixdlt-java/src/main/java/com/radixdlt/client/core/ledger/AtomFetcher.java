@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.radixdlt.client.atommodel.accounts.RadixAddress;
-import com.radixdlt.client.core.atoms.AtomValidationException;
 import com.radixdlt.client.core.network.AtomQuery;
 import com.radixdlt.client.core.network.IncreasingRetryTimer;
 import com.radixdlt.client.core.network.RadixJsonRpcClient;

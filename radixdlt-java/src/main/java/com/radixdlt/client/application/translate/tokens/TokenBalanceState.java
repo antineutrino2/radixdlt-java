@@ -1,5 +1,11 @@
 package com.radixdlt.client.application.translate.tokens;
 
+import com.radixdlt.client.atommodel.quarks.FungibleQuark.FungibleType;
+import com.radixdlt.client.core.atoms.RadixHash;
+import com.radixdlt.client.atommodel.tokens.TokenClassReference;
+import com.radixdlt.client.atommodel.tokens.OwnedTokensParticle;
+import com.radixdlt.client.core.atoms.particles.Spin;
+
 import com.radixdlt.client.core.ledger.TransitionedParticle;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -10,12 +16,6 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import org.radix.utils.UInt256s;
-
-import com.radixdlt.client.atommodel.quarks.FungibleQuark.FungibleType;
-import com.radixdlt.client.atommodel.tokens.OwnedTokensParticle;
-import com.radixdlt.client.atommodel.tokens.TokenClassReference;
-import com.radixdlt.client.core.atoms.RadixHash;
-import com.radixdlt.client.core.atoms.particles.Spin;
 
 /**
  * All the token balances at an address at a given point in time.
@@ -58,7 +58,7 @@ public class TokenBalanceState {
 			final BigInteger amount;
 			if (ownedTokensParticle.getType() == FungibleType.BURNED) {
 				amount = BigInteger.ZERO;
-			} else if (s.getSpinTo().equals(Spin.DOWN)) {
+			} else if (s.getSpinFrom().equals(Spin.UP)) {
 				amount = UInt256s.toBigInteger(ownedTokensParticle.getAmount()).negate();
 			} else {
 				amount = UInt256s.toBigInteger(ownedTokensParticle.getAmount());

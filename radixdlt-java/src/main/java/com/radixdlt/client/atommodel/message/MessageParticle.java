@@ -5,7 +5,6 @@ import com.radixdlt.client.atommodel.accounts.RadixAddress;
 import com.radixdlt.client.atommodel.quarks.AccountableQuark;
 import com.radixdlt.client.atommodel.quarks.DataQuark;
 import com.radixdlt.client.core.atoms.particles.Particle;
-import com.radixdlt.client.core.crypto.ECPublicKey;
 import java.util.HashSet;
 import org.radix.serialization2.DsonOutput;
 import org.radix.serialization2.SerializerId2;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Particle which can hold arbitrary data
