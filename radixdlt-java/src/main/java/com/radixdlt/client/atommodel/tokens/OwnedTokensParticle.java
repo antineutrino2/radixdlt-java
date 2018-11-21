@@ -3,7 +3,6 @@ package com.radixdlt.client.atommodel.tokens;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.radix.serialization2.DsonOutput;
 import org.radix.serialization2.SerializerId2;
@@ -19,6 +18,7 @@ import com.radixdlt.client.core.atoms.RadixHash;
 import com.radixdlt.client.core.atoms.particles.Particle;
 import com.radixdlt.client.core.crypto.ECKeyPair;
 import com.radixdlt.client.core.crypto.ECPublicKey;
+import java.util.HashSet;
 
 /**
  *  A particle which represents an amount of fungible tokens owned by some key owner and stored in an account.
@@ -45,8 +45,8 @@ public class OwnedTokensParticle extends Particle {
 	}
 
 	@Override
-	public Set<ECPublicKey> getAddresses() {
-		return getQuarkOrError(AccountableQuark.class).getAddresses().stream().map(RadixAddress::getPublicKey).collect(Collectors.toSet());
+	public Set<RadixAddress> getAddresses() {
+		return new HashSet<>(getQuarkOrError(AccountableQuark.class).getAddresses());
 	}
 
 	public void addConsumerQuantities(UInt256 amount, ECKeyPair newOwner, Map<ECKeyPair, UInt256> consumerQuantities) {

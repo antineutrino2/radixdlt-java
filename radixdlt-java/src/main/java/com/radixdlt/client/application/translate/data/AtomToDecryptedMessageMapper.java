@@ -69,7 +69,6 @@ public class AtomToDecryptedMessageMapper implements AtomToExecutedActionsMapper
 
 		RadixAddress from = bytesParticle.get().getFrom();
 		RadixAddress to = bytesParticle.get().getAddresses().stream()
-			.map(universe::getAddressFrom)
 			.filter(addr -> !addr.equals(from))
 			.findAny()
 			.orElse(from);

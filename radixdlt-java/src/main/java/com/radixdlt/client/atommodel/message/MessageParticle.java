@@ -6,6 +6,7 @@ import com.radixdlt.client.atommodel.quarks.AccountableQuark;
 import com.radixdlt.client.atommodel.quarks.DataQuark;
 import com.radixdlt.client.core.atoms.particles.Particle;
 import com.radixdlt.client.core.crypto.ECPublicKey;
+import java.util.HashSet;
 import org.radix.serialization2.DsonOutput;
 import org.radix.serialization2.SerializerId2;
 
@@ -66,8 +67,8 @@ public class MessageParticle extends Particle {
 	}
 
 	@Override
-	public Set<ECPublicKey> getAddresses() {
-		return getQuarkOrError(AccountableQuark.class).getAddresses().stream().map(RadixAddress::getPublicKey).collect(Collectors.toSet());
+	public Set<RadixAddress> getAddresses() {
+		return new HashSet<>(getQuarkOrError(AccountableQuark.class).getAddresses());
 	}
 
 	public String getMetaData(String key) {

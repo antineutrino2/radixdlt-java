@@ -78,8 +78,8 @@ public class TokenParticle extends Particle {
 	}
 
 	@Override
-	public Set<ECPublicKey> getAddresses() {
-		return Collections.singleton(getQuarkOrError(AccountableQuark.class).getAddresses().get(0).getPublicKey());
+	public Set<RadixAddress> getAddresses() {
+		return Collections.singleton(getQuarkOrError(AccountableQuark.class).getAddresses().get(0));
 	}
 
 	@JsonProperty("permissions")

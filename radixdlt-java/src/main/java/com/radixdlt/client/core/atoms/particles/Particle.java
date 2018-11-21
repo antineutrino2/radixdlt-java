@@ -1,5 +1,6 @@
 package com.radixdlt.client.core.atoms.particles;
 
+import com.radixdlt.client.atommodel.accounts.RadixAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,7 +38,7 @@ public abstract class Particle extends SerializableObject {
 		this.quarks = Collections.unmodifiableList(quarks);
 	}
 
-	public abstract Set<ECPublicKey> getAddresses();
+	public abstract Set<RadixAddress> getAddresses();
 
 	/// Methods taken from Particle.java in Core
 

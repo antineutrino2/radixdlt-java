@@ -1,5 +1,6 @@
 package com.radixdlt.client.atommodel.timestamp;
 
+import com.radixdlt.client.atommodel.accounts.RadixAddress;
 import com.radixdlt.client.atommodel.quarks.ChronoQuark;
 import com.radixdlt.client.core.atoms.particles.Particle;
 import com.radixdlt.client.core.crypto.ECPublicKey;
@@ -21,7 +22,7 @@ public class TimestampParticle extends Particle {
 	}
 
 	@Override
-	public Set<ECPublicKey> getAddresses() {
+	public Set<RadixAddress> getAddresses() {
 		return Collections.emptySet();
 	}
 

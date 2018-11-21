@@ -34,7 +34,7 @@ public class ValidAtomFilter {
 	private void addAtom(AtomObservation atomObservation, ObservableEmitter<AtomObservation> emitter) {
 		Atom atom = atomObservation.getAtom();
 		atom.particles(Spin.DOWN)
-			.filter(d -> d.getAddresses().stream().allMatch(address::ownsKey))
+			.filter(d -> d.getAddresses().stream().anyMatch(address::equals))
 			.forEach(down -> {
 				ByteBuffer dson = ByteBuffer.wrap(serializer.toDson(down, Output.HASH));
 				Particle up = upParticles.remove(dson);
@@ -45,7 +45,7 @@ public class ValidAtomFilter {
 
 		atom.particles(Spin.UP)
 			.filter(up -> !up.getAddresses().isEmpty() && !(up instanceof MessageParticle) // FIXME: remove hardcode of DataParticle
-				&& up.getAddresses().stream().allMatch(address::ownsKey))
+				&& up.getAddresses().stream().anyMatch(address::equals))
 			.forEach(up -> {
 				ByteBuffer dson = ByteBuffer.wrap(serializer.toDson(up, Output.HASH));
 				upParticles.compute(dson, (thisHash, current) -> {
@@ -66,7 +66,7 @@ public class ValidAtomFilter {
 	private void checkDownParticles(AtomObservation atomObservation, ObservableEmitter<AtomObservation> emitter) {
 		Atom atom = atomObservation.getAtom();
 		Optional<ByteBuffer> missingUp = atom.particles(Spin.DOWN)
-			.filter(p -> p.getAddresses().stream().allMatch(address::ownsKey))
+			.filter(p -> p.getAddresses().stream().anyMatch(address::equals))
 			.map(p -> serializer.toDson(p, Output.HASH))
 			.map(ByteBuffer::wrap)
 			.filter(dson -> !upParticles.containsKey(dson))

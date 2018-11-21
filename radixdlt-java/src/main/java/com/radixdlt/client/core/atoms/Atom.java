@@ -1,6 +1,9 @@
 package com.radixdlt.client.core.atoms;
 
 import java.math.BigInteger;
+import com.radixdlt.client.atommodel.accounts.RadixAddress;
+import com.radixdlt.client.atommodel.tokens.TokenClassReference;
+import com.radixdlt.client.core.atoms.particles.SpunParticle;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -21,10 +24,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.radixdlt.client.atommodel.message.MessageParticle;
 import com.radixdlt.client.atommodel.timestamp.TimestampParticle;
 import com.radixdlt.client.atommodel.tokens.OwnedTokensParticle;
-import com.radixdlt.client.atommodel.tokens.TokenClassReference;
 import com.radixdlt.client.core.atoms.particles.Particle;
 import com.radixdlt.client.core.atoms.particles.Spin;
-import com.radixdlt.client.core.atoms.particles.SpunParticle;
 import com.radixdlt.client.core.crypto.ECPublicKey;
 import com.radixdlt.client.core.crypto.ECSignature;
 
@@ -83,7 +84,7 @@ public final class Atom extends SerializableObject {
 			.map(SpunParticle<Particle>::getParticle)
 			.map(Particle::getAddresses)
 			.flatMap(Set::stream)
-			.map(ECPublicKey::getUID)
+			.map(RadixAddress::getUID)
 			.map(EUID::getShard)
 			.collect(Collectors.toSet());
 	}
@@ -94,7 +95,7 @@ public final class Atom extends SerializableObject {
 			return particles.stream()
 				.filter(s -> s.getSpin() == Spin.DOWN)
 				.flatMap(s -> s.getParticle().getAddresses().stream())
-				.map(ECPublicKey::getUID)
+				.map(RadixAddress::getUID)
 				.map(EUID::getShard)
 				.collect(Collectors.toSet());
 		} else {
@@ -106,7 +107,7 @@ public final class Atom extends SerializableObject {
 		return particles.stream().filter(s -> s.getSpin() == spin).map(SpunParticle::getParticle);
 	}
 
-	public Stream<ECPublicKey> addresses() {
+	public Stream<RadixAddress> addresses() {
 		return particles.stream()
 			.map(SpunParticle<Particle>::getParticle)
 			.map(Particle::getAddresses)
