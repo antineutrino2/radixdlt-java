@@ -19,6 +19,7 @@ import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
 import org.radix.common.ID.EUID;
+import org.radix.crypto.Hash;
 import org.radix.serialization2.DsonOutput;
 import org.radix.serialization2.DsonOutput.Output;
 import org.radix.serialization2.SerializerId2;
@@ -30,7 +31,51 @@ import com.radixdlt.client.core.atoms.RadixHash;
 
 @SerializerId2("ECKEYPAIR")
 public class ECKeyPair extends SerializableObject {
-	@JsonProperty("public")
+
+    /**
+     * FIXME: This method doesn't belong here as it doesn't generate a key pair
+     * FIXME: from an elliptic curve, but rather from a SHA-256 hash.
+     * <p>
+     * Generates a new, deterministic {@code ECKeyPair} instance based on the
+     * provided seed.
+     *
+     * @param seed The seed to use when deriving the key pair instance.
+     * @return A key pair that corresponds to the provided seed.
+     * @throws IllegalArgumentException if the seed is empty or a null pointer.
+     */
+    public static ECKeyPair fromSeed(byte[] seed) {
+        if (seed == null) {
+            throw new IllegalArgumentException("Seed must not be null");
+        }
+
+        if (seed.length == 0) {
+            throw new IllegalArgumentException("Seed must not be empty");
+        }
+
+
+        byte[] privateKey = Hash.hash("SHA-256", seed);
+
+        if (privateKey.length != 32) {
+            byte[] copy = new byte[32];
+
+            if (privateKey.length > 32) {
+                // Cut (note that this will limit the key space to something
+                // smaller than what initially may have been intended).
+                copy = Arrays.copyOfRange(privateKey, privateKey.length - 32, privateKey.length);
+            } else {
+                // Pad (note that this will enable a key space smaller than
+                // the full size of the ECKeyPair space).
+                System.arraycopy(privateKey, 0, copy, 32 - privateKey.length, privateKey.length);
+            }
+
+            privateKey = copy;
+        }
+
+        return new ECKeyPair(privateKey);
+    }
+
+
+    @JsonProperty("public")
 	@DsonOutput(Output.ALL)
 	private ECPublicKey publicKey;
 
