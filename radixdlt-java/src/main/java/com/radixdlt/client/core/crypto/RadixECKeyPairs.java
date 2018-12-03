@@ -3,6 +3,7 @@ package com.radixdlt.client.core.crypto;
 import org.radix.crypto.Hash;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class RadixECKeyPairs {
 
@@ -30,9 +31,7 @@ public class RadixECKeyPairs {
      * @throws IllegalArgumentException if the seed is empty or a null pointer.
      */
     public ECKeyPair generateKeyPairFromSeed(byte[] seed) {
-        if (seed == null) {
-            throw new IllegalArgumentException("Seed must not be null");
-        }
+        Objects.requireNonNull(seed, "Seed must not be null");
 
         if (seed.length == 0) {
             throw new IllegalArgumentException("Seed must not be empty");
