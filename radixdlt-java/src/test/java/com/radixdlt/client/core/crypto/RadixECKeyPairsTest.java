@@ -7,7 +7,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 
-public class ECKeyPairGeneratorFromSeedTest {
+public class RadixECKeyPairsTest {
 
     @BeforeClass
     public static void beforeSuite() {
@@ -34,12 +34,12 @@ public class ECKeyPairGeneratorFromSeedTest {
     @Test
     public void when_generating_two_key_pairs_from_same_seed__they_should_have_same_private_keys() {
         byte[] seed = "seed".getBytes();
-        byte[] privateKey1 = ECKeyPairGenerator
+        byte[] privateKey1 = RadixECKeyPairs
                 .newInstance()
                 .generateKeyPairFromSeed(seed)
                 .getPrivateKey();
 
-        byte[] privateKey2 = ECKeyPairGenerator
+        byte[] privateKey2 = RadixECKeyPairs
                 .newInstance()
                 .generateKeyPairFromSeed(seed)
                 .getPrivateKey();

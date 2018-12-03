@@ -8,6 +8,7 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -22,21 +23,25 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.radix.crypto.Hash;
 
 public final class ECKeyPairGenerator {
-	private static final Map<Integer, ECDomainParameters> DOMAINS;
+    private static final Map<Integer, ECDomainParameters> DOMAINS = new HashMap<>();
 
-	static {
-		if (AndroidUtil.isAndroidRuntime()) {
-			Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
-		}
-		Security.insertProviderAt(new BouncyCastleProvider(), 1);
-		DOMAINS = Stream.of(256).collect(Collectors.toMap(Integer::new, (bits) -> {
-			final X9ECParameters curve =
-				bits == 256
-					? CustomNamedCurves.getByName("secp" + bits + "k1")
-					: SECNamedCurves.getByName("secp" + bits + "k1");
-			return new ECDomainParameters(curve.getCurve(), curve.getG(), curve.getN(), curve.getH());
-		}));
-	}
+    static {
+        install();
+    }
+
+    static void install() {
+        if (AndroidUtil.isAndroidRuntime()) {
+            Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
+        }
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        DOMAINS.putAll(Stream.of(256)
+                .collect(Collectors.toMap(Integer::new, (bits) -> {
+                    final X9ECParameters curve = bits == 256 ?
+                            CustomNamedCurves.getByName("secp" + bits + "k1") :
+                            SECNamedCurves.getByName("secp" + bits + "k1");
+                    return new ECDomainParameters(curve.getCurve(), curve.getG(), curve.getN(), curve.getH());
+                })));
+    }
 
 	public static ECDomainParameters getDomain(int numBits) {
 		int roundedNumBits = (((numBits - 1) / 32) + 1) * 32;
@@ -92,44 +97,5 @@ public final class ECKeyPairGenerator {
 			throw new RuntimeException(e.getMessage());
 		}
 	}
-
-    /**
-     * Generates a new, deterministic {@code ECKeyPair} instance based on the
-     * provided seed.
-     *
-     * @param seed The seed to use when deriving the key pair instance.
-     * @return A key pair that corresponds to the provided seed.
-     * @throws IllegalArgumentException if the seed is empty or a null pointer.
-     */
-    public ECKeyPair generateKeyPairFromSeed(byte[] seed) {
-        if (seed == null) {
-            throw new IllegalArgumentException("Seed must not be null");
-        }
-
-        if (seed.length == 0) {
-            throw new IllegalArgumentException("Seed must not be empty");
-        }
-
-
-        byte[] privateKey = Hash.hash("SHA-256", seed);
-
-        if (privateKey.length != 32) {
-            byte[] copy = new byte[32];
-
-            if (privateKey.length > 32) {
-                // Cut (note that this will limit the key space to something
-                // smaller than what initially may have been intended).
-                copy = Arrays.copyOfRange(privateKey, privateKey.length - 32, privateKey.length);
-            } else {
-                // Pad (note that this will enable a key space smaller than
-                // the full size of the ECKeyPair space).
-                System.arraycopy(privateKey, 0, copy, 32 - privateKey.length, privateKey.length);
-            }
-
-            privateKey = copy;
-        }
-
-        return new ECKeyPair(privateKey);
-    }
 
 }
