@@ -20,7 +20,6 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
-import org.radix.crypto.Hash;
 
 public final class ECKeyPairGenerator {
     private static final Map<Integer, ECDomainParameters> DOMAINS = new HashMap<>();
@@ -36,9 +35,9 @@ public final class ECKeyPairGenerator {
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
         DOMAINS.putAll(Stream.of(256)
                 .collect(Collectors.toMap(Integer::new, (bits) -> {
-                    final X9ECParameters curve = bits == 256 ?
-                            CustomNamedCurves.getByName("secp" + bits + "k1") :
-                            SECNamedCurves.getByName("secp" + bits + "k1");
+                    final X9ECParameters curve = bits == 256
+                            ? CustomNamedCurves.getByName("secp" + bits + "k1")
+                            : SECNamedCurves.getByName("secp" + bits + "k1");
                     return new ECDomainParameters(curve.getCurve(), curve.getG(), curve.getN(), curve.getH());
                 })));
     }
