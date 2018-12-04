@@ -13,7 +13,7 @@ public class RadixECKeyPairsTest {
     public static void beforeSuite() {
         // Ensure the BouncyCastle providers are loaded into memory
         // (because BouncyCastle SHA-256 is used in "seed" tests).
-        ECKeyPairGenerator.newInstance();
+        ECKeyPairGenerator.install();
     }
 
     @Test
