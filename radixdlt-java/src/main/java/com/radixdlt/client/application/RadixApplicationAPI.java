@@ -1,23 +1,6 @@
 package com.radixdlt.client.application;
 
-import com.radixdlt.client.core.network.RadixNetworkState;
-import com.radixdlt.client.core.network.actions.SubmitAtomResultAction;
-import com.radixdlt.client.core.network.actions.SubmitAtomResultAction.SubmitAtomResultActionType;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.radix.utils.UInt256;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.radixdlt.client.application.identity.Data;
 import com.radixdlt.client.application.identity.Data.DataBuilder;
@@ -52,6 +35,7 @@ import com.radixdlt.client.application.translate.tokenclasses.TokenState;
 import com.radixdlt.client.application.translate.tokens.AtomToTokenTransfersMapper;
 import com.radixdlt.client.application.translate.tokens.TokenBalanceReducer;
 import com.radixdlt.client.application.translate.tokens.TokenBalanceState;
+import com.radixdlt.client.application.translate.tokens.TokenClassReference;
 import com.radixdlt.client.application.translate.tokens.TokenTransfer;
 import com.radixdlt.client.application.translate.tokens.TransferTokensAction;
 import com.radixdlt.client.application.translate.tokens.TransferTokensToParticlesMapper;
@@ -59,18 +43,20 @@ import com.radixdlt.client.application.translate.unique.AlreadyUsedUniqueIdReaso
 import com.radixdlt.client.application.translate.unique.PutUniqueIdToParticlesMapper;
 import com.radixdlt.client.atommodel.accounts.RadixAddress;
 import com.radixdlt.client.atommodel.timestamp.TimestampParticle;
-import com.radixdlt.client.application.translate.tokens.TokenClassReference;
 import com.radixdlt.client.core.RadixUniverse;
 import com.radixdlt.client.core.RadixUniverse.Ledger;
 import com.radixdlt.client.core.atoms.Atom;
 import com.radixdlt.client.core.atoms.AtomObservation;
+import com.radixdlt.client.core.atoms.ParticleGroup;
 import com.radixdlt.client.core.atoms.UnsignedAtom;
 import com.radixdlt.client.core.atoms.particles.SpunParticle;
 import com.radixdlt.client.core.crypto.ECKeyPairGenerator;
 import com.radixdlt.client.core.crypto.ECPublicKey;
+import com.radixdlt.client.core.network.RadixNetworkState;
 import com.radixdlt.client.core.network.actions.SubmitAtomAction;
+import com.radixdlt.client.core.network.actions.SubmitAtomResultAction;
+import com.radixdlt.client.core.network.actions.SubmitAtomResultAction.SubmitAtomResultActionType;
 import com.radixdlt.client.core.pow.ProofOfWorkBuilder;
-
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
@@ -79,6 +65,21 @@ import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.disposables.Disposables;
 import io.reactivex.observables.ConnectableObservable;
+import org.radix.utils.UInt256;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The Radix Dapp API, a high level api which dapps can utilize. The class hides
@@ -103,10 +104,11 @@ public class RadixApplicationAPI {
 
 		/**
 		 * A low level interface, returns an a observable of the status of an atom submission as it occurs.
+		 *
 		 * @return observable of atom submission status
 		 */
 		public Observable<SubmitAtomAction> toObservable() {
-			return updates;
+			return this.updates;
 		}
 
 		/**
@@ -116,7 +118,7 @@ public class RadixApplicationAPI {
 		 * @return completable of successful execution of action onto ledger.
 		 */
 		public Completable toCompletable() {
-			return completable;
+			return this.completable;
 		}
 	}
 
@@ -148,15 +150,15 @@ public class RadixApplicationAPI {
 	private final Ledger ledger;
 
 	private RadixApplicationAPI(
-		RadixIdentity identity,
-		RadixUniverse universe,
-		FeeMapper feeMapper,
-		Ledger ledger,
-		List<StatelessActionToParticlesMapper> statelessActionToParticlesMappers,
-		List<StatefulActionToParticlesMapper> statefulActionToParticlesMappers,
-		List<ParticleReducer<? extends ApplicationState>> particleReducers,
-		List<AtomToExecutedActionsMapper<? extends Object>> atomMappers,
-		List<AtomErrorToExceptionReasonMapper> atomErrorMappers
+			RadixIdentity identity,
+			RadixUniverse universe,
+			FeeMapper feeMapper,
+			Ledger ledger,
+			List<StatelessActionToParticlesMapper> statelessActionToParticlesMappers,
+			List<StatefulActionToParticlesMapper> statefulActionToParticlesMappers,
+			List<ParticleReducer<? extends ApplicationState>> particleReducers,
+			List<AtomToExecutedActionsMapper<? extends Object>> atomMappers,
+			List<AtomErrorToExceptionReasonMapper> atomErrorMappers
 	) {
 		Objects.requireNonNull(identity);
 		Objects.requireNonNull(universe);
@@ -170,12 +172,12 @@ public class RadixApplicationAPI {
 		this.identity = identity;
 		this.universe = universe;
 		this.actionStores = atomMappers.stream().collect(Collectors.toMap(
-			AtomToExecutedActionsMapper::actionClass,
-			m -> new ActionStore<>(ledger.getAtomStore(), m)
+				AtomToExecutedActionsMapper::actionClass,
+				m -> new ActionStore<>(ledger.getAtomStore(), m)
 		));
 		this.applicationStores = particleReducers.stream().collect(Collectors.toMap(
-			ParticleReducer::stateClass,
-			r -> new ApplicationStore<>(ledger.getParticleStore(), r)
+				ParticleReducer::stateClass,
+				r -> new ApplicationStore<>(ledger.getParticleStore(), r)
 		));
 		this.statefulActionToParticlesMappers = statefulActionToParticlesMappers;
 		this.statelessActionToParticlesMappers = statelessActionToParticlesMappers;
@@ -228,7 +230,8 @@ public class RadixApplicationAPI {
 		}
 
 		public RadixApplicationAPIBuilder defaultFeeMapper() {
-			this.feeMapper = new PowFeeMapper(p -> new Atom(p).getHash(), new ProofOfWorkBuilder());
+			this.feeMapper = new PowFeeMapper(p -> new Atom(Collections.singletonList(ParticleGroup.of(p))).getHash(),
+					new ProofOfWorkBuilder());
 			return this;
 		}
 
@@ -257,15 +260,15 @@ public class RadixApplicationAPI {
 			final List<ParticleReducer<? extends ApplicationState>> reducers = this.reducers;
 
 			return new RadixApplicationAPI(
-				identity,
-				universe,
-				feeMapper,
-				ledger,
-				statelessActionToParticlesMappers,
-				statefulActionToParticlesMappers,
-				reducers,
-				atomMappers,
-				atomErrorMappers
+					identity,
+					universe,
+					feeMapper,
+					ledger,
+					this.statelessActionToParticlesMappers,
+					this.statefulActionToParticlesMappers,
+					reducers,
+					this.atomMappers,
+					this.atomErrorMappers
 			);
 		}
 	}
@@ -280,29 +283,29 @@ public class RadixApplicationAPI {
 		Objects.requireNonNull(identity);
 
 		return new RadixApplicationAPIBuilder()
-			.identity(identity)
-			.defaultFeeMapper()
-			.addStatelessParticlesMapper(new SendMessageToParticlesMapper(ECKeyPairGenerator.newInstance()::generateKeyPair))
-			.addStatelessParticlesMapper(new CreateTokenToParticlesMapper())
-			.addStatelessParticlesMapper(new PutUniqueIdToParticlesMapper())
-			.addStatelessParticlesMapper(new AtomicToParticlesMapper())
-			.addStatefulParticlesMapper(new MintTokensActionMapper())
-			.addStatefulParticlesMapper(new BurnTokensActionMapper(RadixUniverse.getInstance()))
-			.addStatefulParticlesMapper(new TransferTokensToParticlesMapper(RadixUniverse.getInstance()))
-			.addReducer(new TokenClassesReducer())
-			.addReducer(new TokenBalanceReducer())
-			.addAtomMapper(new AtomToDecryptedMessageMapper(RadixUniverse.getInstance()))
-			.addAtomMapper(new AtomToTokenTransfersMapper(RadixUniverse.getInstance()))
-			.addAtomErrorMapper(new AlreadyUsedUniqueIdReasonMapper())
-			.build();
+				.identity(identity)
+				.defaultFeeMapper()
+				.addStatelessParticlesMapper(new SendMessageToParticlesMapper(ECKeyPairGenerator.newInstance()::generateKeyPair))
+				.addStatelessParticlesMapper(new CreateTokenToParticlesMapper())
+				.addStatelessParticlesMapper(new PutUniqueIdToParticlesMapper())
+				.addStatelessParticlesMapper(new AtomicToParticlesMapper())
+				.addStatefulParticlesMapper(new MintTokensActionMapper())
+				.addStatefulParticlesMapper(new BurnTokensActionMapper(RadixUniverse.getInstance()))
+				.addStatefulParticlesMapper(new TransferTokensToParticlesMapper(RadixUniverse.getInstance()))
+				.addReducer(new TokenClassesReducer())
+				.addReducer(new TokenBalanceReducer())
+				.addAtomMapper(new AtomToDecryptedMessageMapper(RadixUniverse.getInstance()))
+				.addAtomMapper(new AtomToTokenTransfersMapper(RadixUniverse.getInstance()))
+				.addAtomErrorMapper(new AlreadyUsedUniqueIdReasonMapper())
+				.build();
 	}
 
 	public Observable<RadixNetworkState> getNetworkState() {
-		return universe.getNetworkState();
+		return this.universe.getNetworkState();
 	}
 
 	private ApplicationStore<? extends ApplicationState> getStore(Class<? extends ApplicationState> storeClass) {
-		ApplicationStore<? extends ApplicationState> store = applicationStores.get(storeClass);
+		ApplicationStore<? extends ApplicationState> store = this.applicationStores.get(storeClass);
 		if (store == null) {
 			throw new IllegalArgumentException("No store available for class: " + storeClass);
 		}
@@ -310,7 +313,7 @@ public class RadixApplicationAPI {
 	}
 
 	private ActionStore<?> getActionStore(Class<?> actionClass) {
-		ActionStore<?> store = actionStores.get(actionClass);
+		ActionStore<?> store = this.actionStores.get(actionClass);
 		if (store == null) {
 			throw new IllegalArgumentException("No store available for class: " + actionClass);
 		}
@@ -324,7 +327,7 @@ public class RadixApplicationAPI {
 	 * @return Disposable to dispose to stop pulling
 	 */
 	public Disposable pull() {
-		return pull(getMyAddress());
+		return this.pull(this.getMyAddress());
 	}
 
 	/**
@@ -337,8 +340,8 @@ public class RadixApplicationAPI {
 	public Disposable pull(RadixAddress address) {
 		Objects.requireNonNull(address);
 
-		if (ledger.getAtomPuller() != null) {
-			return ledger.getAtomPuller().pull(address).subscribe();
+		if (this.ledger.getAtomPuller() != null) {
+			return this.ledger.getAtomPuller().pull(address).subscribe();
 		} else {
 			return Disposables.disposed();
 		}
@@ -350,7 +353,7 @@ public class RadixApplicationAPI {
 	 * @return the native token reference
 	 */
 	public TokenClassReference getNativeTokenRef() {
-		return universe.getNativeToken();
+		return this.universe.getNativeToken();
 	}
 
 	/**
@@ -359,7 +362,7 @@ public class RadixApplicationAPI {
 	 * @return a hot observable of latest state of the native token
 	 */
 	public Observable<TokenState> getNativeTokenClass() {
-		return getTokenClass(getNativeTokenRef());
+		return this.getTokenClass(this.getNativeTokenRef());
 	}
 
 	/**
@@ -368,26 +371,26 @@ public class RadixApplicationAPI {
 	 * address automatically until the observable is disposed.
 	 *
 	 * @param actionClass the Action class
-	 * @param address the address to retrieve the state of
-	 * @param <T> the Action class
+	 * @param address     the address to retrieve the state of
+	 * @param <T>         the Action class
 	 * @return a hot observable of the actions at the given address
 	 */
 	public <T> Observable<T> getActions(Class<T> actionClass, RadixAddress address) {
-		final Observable<AtomObservation> atomsPulled = ledger.getAtomPuller() != null
-			? ledger.getAtomPuller().pull(address)
-			: Observable.never();
+		final Observable<AtomObservation> atomsPulled = this.ledger.getAtomPuller() != null
+				? this.ledger.getAtomPuller().pull(address)
+				: Observable.never();
 		Observable<AtomObservation> auto = atomsPulled.publish()
-			.refCount(2);
+				.refCount(2);
 		Disposable d = auto.subscribe();
 
-		return this.getActionStore(actionClass).getActions(address, identity)
-			.map(actionClass::cast)
-			.publish()
-			.autoConnect()
-			.doOnSubscribe(disposable -> auto.subscribe().dispose())
-			.doOnError(e -> d.dispose())
-			.doOnDispose(d::dispose)
-			.doOnComplete(d::dispose);
+		return this.getActionStore(actionClass).getActions(address, this.identity)
+				.map(actionClass::cast)
+				.publish()
+				.autoConnect()
+				.doOnSubscribe(disposable -> auto.subscribe().dispose())
+				.doOnError(e -> d.dispose())
+				.doOnDispose(d::dispose)
+				.doOnComplete(d::dispose);
 	}
 
 	/**
@@ -396,26 +399,26 @@ public class RadixApplicationAPI {
 	 * address automatically until the observable is disposed.
 	 *
 	 * @param stateClass the ApplicationState class
-	 * @param address the address to retrieve the state of
-	 * @param <T> the ApplicationState class
+	 * @param address    the address to retrieve the state of
+	 * @param <T>        the ApplicationState class
 	 * @return a hot observable of a state of the given address
 	 */
 	public <T extends ApplicationState> Observable<T> getState(Class<T> stateClass, RadixAddress address) {
-		final Observable<AtomObservation> atomsPulled = ledger.getAtomPuller() != null
-				? ledger.getAtomPuller().pull(address)
+		final Observable<AtomObservation> atomsPulled = this.ledger.getAtomPuller() != null
+				? this.ledger.getAtomPuller().pull(address)
 				: Observable.never();
 		Observable<AtomObservation> auto = atomsPulled.publish()
-			.refCount(2);
+				.refCount(2);
 		Disposable d = auto.subscribe();
 
 		return this.getStore(stateClass).getState(address)
-			.map(stateClass::cast)
-			.publish()
-			.autoConnect()
-			.doOnSubscribe(disposable -> auto.subscribe().dispose())
-			.doOnError(e -> d.dispose())
-			.doOnDispose(d::dispose)
-			.doOnComplete(d::dispose);
+				.map(stateClass::cast)
+				.publish()
+				.autoConnect()
+				.doOnSubscribe(disposable -> auto.subscribe().dispose())
+				.doOnError(e -> d.dispose())
+				.doOnDispose(d::dispose)
+				.doOnComplete(d::dispose);
 	}
 
 	/**
@@ -426,7 +429,7 @@ public class RadixApplicationAPI {
 	 * @return a hot observable of the latest state of token classes
 	 */
 	public Observable<TokenClassesState> getTokenClasses(RadixAddress address) {
-		return getState(TokenClassesState.class, address);
+		return this.getState(TokenClassesState.class, address);
 	}
 
 	/**
@@ -436,7 +439,7 @@ public class RadixApplicationAPI {
 	 * @return a hot observable of the latest state of token classes
 	 */
 	public Observable<TokenClassesState> getMyTokenClasses() {
-		return getTokenClasses(getMyAddress());
+		return this.getTokenClasses(this.getMyAddress());
 	}
 
 	/**
@@ -446,189 +449,188 @@ public class RadixApplicationAPI {
 	 */
 	public Observable<TokenState> getTokenClass(TokenClassReference ref) {
 		return this.getTokenClasses(ref.getAddress())
-			.flatMapMaybe(m -> Optional.ofNullable(m.getState().get(ref)).map(Maybe::just).orElse(Maybe.empty()));
+				.flatMapMaybe(m -> Optional.ofNullable(m.getState().get(ref)).map(Maybe::just).orElse(Maybe.empty()));
 	}
 
 	public ECPublicKey getMyPublicKey() {
-		return identity.getPublicKey();
+		return this.identity.getPublicKey();
 	}
 
 	public RadixIdentity getMyIdentity() {
-		return identity;
+		return this.identity;
 	}
 
 	public RadixAddress getMyAddress() {
-		return universe.getAddressFrom(identity.getPublicKey());
+		return this.universe.getAddressFrom(this.identity.getPublicKey());
 	}
 
 	public Observable<DecryptedMessage> getMessages() {
-		return getMessages(this.getMyAddress());
+		return this.getMessages(this.getMyAddress());
 	}
 
 	public Observable<DecryptedMessage> getMessages(RadixAddress address) {
 		Objects.requireNonNull(address);
-		return getActions(DecryptedMessage.class, address);
+		return this.getActions(DecryptedMessage.class, address);
 	}
 
 	public Result sendMessage(byte[] data, boolean encrypt) {
-		return this.sendMessage(data, encrypt, getMyAddress());
+		return this.sendMessage(data, encrypt, this.getMyAddress());
 	}
 
 	public Result sendMessage(byte[] data, boolean encrypt, RadixAddress address) {
-		SendMessageAction sendMessageAction = new SendMessageAction(data, getMyAddress(), address, encrypt);
+		SendMessageAction sendMessageAction = new SendMessageAction(data, this.getMyAddress(), address, encrypt);
 
-		return execute(sendMessageAction);
+		return this.execute(sendMessageAction);
 	}
 
 	public Observable<TokenTransfer> getMyTokenTransfers() {
-		return getTokenTransfers(getMyAddress());
+		return this.getTokenTransfers(this.getMyAddress());
 	}
 
 	public Observable<TokenTransfer> getTokenTransfers(RadixAddress address) {
 		Objects.requireNonNull(address);
-		return getActions(TokenTransfer.class, address);
+		return this.getActions(TokenTransfer.class, address);
 	}
 
 	public Observable<Map<TokenClassReference, BigDecimal>> getBalance(RadixAddress address) {
 		Objects.requireNonNull(address);
-		return getState(TokenBalanceState.class, address)
-			.map(TokenBalanceState::getBalance)
-			.map(map -> map.entrySet().stream().collect(
-				Collectors.toMap(Entry::getKey, e -> e.getValue().getAmount())
-			));
+		return this.getState(TokenBalanceState.class, address)
+				.map(TokenBalanceState::getBalance)
+				.map(map -> map.entrySet().stream().collect(
+						Collectors.toMap(Entry::getKey, e -> e.getValue().getAmount())
+				));
 	}
 
 	public Observable<BigDecimal> getMyBalance(TokenClassReference tokenClassReference) {
-		return getBalance(getMyAddress(), tokenClassReference);
+		return this.getBalance(this.getMyAddress(), tokenClassReference);
 	}
 
 	public Observable<BigDecimal> getBalance(RadixAddress address, TokenClassReference token) {
 		Objects.requireNonNull(token);
 
-		return getBalance(address)
-			.map(balances -> Optional.ofNullable(balances.get(token)).orElse(BigDecimal.ZERO));
+		return this.getBalance(address)
+				.map(balances -> Optional.ofNullable(balances.get(token)).orElse(BigDecimal.ZERO));
 	}
 
 	/**
 	 * Creates a third party token into the user's account
 	 *
-	 * @param name The name of the token to create
-	 * @param iso The symbol of the token to create
-	 * @param description A description of the token
-	 * @param initialSupply The initial amount in subunits of supply for this token
-	 * @param granularity The least multiple of subunits per transaction for this token
+	 * @param name            The name of the token to create
+	 * @param iso             The symbol of the token to create
+	 * @param description     A description of the token
+	 * @param initialSupply   The initial amount in subunits of supply for this token
+	 * @param granularity     The least multiple of subunits per transaction for this token
 	 * @param tokenSupplyType The type of supply for this token: Fixed or Mutable
 	 * @return result of the transaction
 	 */
 	public Result createToken(
-		String name,
-		String iso,
-		String description,
-		UInt256 initialSupply,
-		UInt256 granularity,
-		TokenSupplyType tokenSupplyType
+			String name,
+			String iso,
+			String description,
+			UInt256 initialSupply,
+			UInt256 granularity,
+			TokenSupplyType tokenSupplyType
 	) {
 		CreateTokenAction tokenCreation = new CreateTokenAction(
-				getMyAddress(), name, iso, description, initialSupply, granularity, tokenSupplyType);
-		return execute(tokenCreation);
+				this.getMyAddress(), name, iso, description, initialSupply, granularity, tokenSupplyType);
+		return this.execute(tokenCreation);
 	}
 
 	/**
 	 * Mints an amount of new tokens into the user's account
 	 *
-	 * @param iso The symbol of the token to mint
+	 * @param iso    The symbol of the token to mint
 	 * @param amount The amount in subunits to mint
 	 * @return result of the transaction
 	 */
 	public Result mintTokens(String iso, UInt256 amount) {
-		MintTokensAction mintTokensAction = new MintTokensAction(TokenClassReference.of(getMyAddress(), iso), amount);
-		return execute(mintTokensAction);
+		MintTokensAction mintTokensAction = new MintTokensAction(TokenClassReference.of(this.getMyAddress(), iso), amount);
+		return this.execute(mintTokensAction);
 	}
 
 
 	/**
 	 * Burns an amount of tokens in the user's account
 	 *
-	 * @param iso The symbol of the token to mint
+	 * @param iso    The symbol of the token to mint
 	 * @param amount The amount to mint
 	 * @return result of the transaction
 	 */
 	public Result burnTokens(String iso, UInt256 amount) {
-		BurnTokensAction burnTokensAction = new BurnTokensAction(TokenClassReference.of(getMyAddress(), iso), amount);
-		return execute(burnTokensAction);
+		BurnTokensAction burnTokensAction = new BurnTokensAction(TokenClassReference.of(this.getMyAddress(), iso), amount);
+		return this.execute(burnTokensAction);
 	}
 
 	/**
 	 * Sends an amount of a token to an address
 	 *
-	 * @param to the address to send tokens to
+	 * @param to     the address to send tokens to
 	 * @param amount the amount and token type
 	 * @return result of the transaction
 	 */
 	public Result sendTokens(RadixAddress to, BigDecimal amount, TokenClassReference token) {
-		return transferTokens(getMyAddress(), to, amount, token);
+		return this.transferTokens(this.getMyAddress(), to, amount, token);
 	}
 
 	/**
 	 * Sends an amount of a token with a message attachment to an address
 	 *
-	 * @param to the address to send tokens to
-	 * @param amount the amount and token type
+	 * @param to      the address to send tokens to
+	 * @param amount  the amount and token type
 	 * @param message message to be encrypted and attached to transfer
 	 * @return result of the transaction
 	 */
 	public Result sendTokens(
-		RadixAddress to,
-		BigDecimal amount,
-		TokenClassReference token,
-		@Nullable String message
+			RadixAddress to,
+			BigDecimal amount,
+			TokenClassReference token,
+			@Nullable String message
 	) {
 		final Data attachment;
 		if (message != null) {
 			attachment = new DataBuilder()
-				.addReader(to.getPublicKey())
-				.addReader(getMyPublicKey())
-				.bytes(message.getBytes()).build();
+					.addReader(to.getPublicKey())
+					.addReader(this.getMyPublicKey())
+					.bytes(message.getBytes()).build();
 		} else {
 			attachment = null;
 		}
 
-		return transferTokens(getMyAddress(), to, amount, token, attachment);
+		return this.transferTokens(this.getMyAddress(), to, amount, token, attachment);
 	}
 
 	/**
 	 * Sends an amount of a token with a data attachment to an address
 	 *
-	 * @param to the address to send tokens to
-	 * @param amount the amount and token type
+	 * @param to         the address to send tokens to
+	 * @param amount     the amount and token type
 	 * @param attachment the data attached to the transaction
 	 * @return result of the transaction
 	 */
 	public Result sendTokens(RadixAddress to, BigDecimal amount, TokenClassReference token, @Nullable Data attachment) {
-		return transferTokens(getMyAddress(), to, amount, token, attachment);
+		return this.transferTokens(this.getMyAddress(), to, amount, token, attachment);
 	}
 
 
-
 	public Result transferTokens(RadixAddress from, RadixAddress to, BigDecimal amount, TokenClassReference token) {
-		return transferTokens(from, to, amount, token, null);
+		return this.transferTokens(from, to, amount, token, null);
 	}
 
 	/**
 	 * Sends an amount of a token with a data attachment to an address with a unique property
 	 * meaning that no other transaction can be executed with the same unique bytes
 	 *
-	 * @param to the address to send tokens to
-	 * @param amount the amount and token type
+	 * @param to         the address to send tokens to
+	 * @param amount     the amount and token type
 	 * @param attachment the data attached to the transaction
 	 * @return result of the transaction
 	 */
 	public Result transferTokens(
-		RadixAddress from,
-		RadixAddress to,
-		BigDecimal amount,
-		TokenClassReference token,
-		@Nullable Data attachment
+			RadixAddress from,
+			RadixAddress to,
+			BigDecimal amount,
+			TokenClassReference token,
+			@Nullable Data attachment
 	) {
 		Objects.requireNonNull(from);
 		Objects.requireNonNull(to);
@@ -636,21 +638,21 @@ public class RadixApplicationAPI {
 		Objects.requireNonNull(token);
 
 		final TransferTokensAction transferTokensAction =
-			TransferTokensAction.create(from, to, amount, token, attachment);
+				TransferTokensAction.create(from, to, amount, token, attachment);
 
-		return execute(transferTokensAction);
+		return this.execute(transferTokensAction);
 	}
 
 	private Observable<SpunParticle> statefulMappersToParticles(Observable<Action> actions) {
 		return actions.flatMap(action ->
-			Observable
-				.fromIterable(this.statefulActionToParticlesMappers)
-				.flatMap(mapper -> {
-					final Observable<Observable<? extends ApplicationState>> context =
-						mapper.requiredState(action).map(ctx -> this.getState(ctx.stateClass(), ctx.address()));
-					return mapper.mapToParticles(action, context);
-				})
-			);
+				Observable
+						.fromIterable(this.statefulActionToParticlesMappers)
+						.flatMap(mapper -> {
+							final Observable<Observable<? extends ApplicationState>> context =
+									mapper.requiredState(action).map(ctx -> this.getState(ctx.stateClass(), ctx.address()));
+							return mapper.mapToParticles(action, context);
+						})
+		);
 	}
 
 	private Observable<Action> statefulMappersToSideEffects(Action action) {
@@ -658,20 +660,20 @@ public class RadixApplicationAPI {
 				.fromIterable(this.statefulActionToParticlesMappers)
 				.flatMap(mapper -> {
 					final Observable<Observable<? extends ApplicationState>> context =
-						mapper.requiredState(action).map(ctx -> this.getState(ctx.stateClass(), ctx.address()));
+							mapper.requiredState(action).map(ctx -> this.getState(ctx.stateClass(), ctx.address()));
 					return mapper.sideEffects(action, context);
 				});
 	}
 
 	private Observable<Action> collectActionAndEffects(Action action) {
 		Observable<Action> statelessEffects = Observable
-			.fromIterable(this.statelessActionToParticlesMappers)
-			.flatMap(mapper -> mapper.sideEffects(action));
-		Observable<Action> statefulEffects = statefulMappersToSideEffects(action);
+				.fromIterable(this.statelessActionToParticlesMappers)
+				.flatMap(mapper -> mapper.sideEffects(action));
+		Observable<Action> statefulEffects = this.statefulMappersToSideEffects(action);
 
 		return Observable.concat(statelessEffects, statefulEffects)
-			.flatMap(RadixApplicationAPI.this::collectActionAndEffects)
-			.startWith(action);
+				.flatMap(RadixApplicationAPI.this::collectActionAndEffects)
+				.startWith(action);
 	}
 
 	/**
@@ -684,51 +686,52 @@ public class RadixApplicationAPI {
 	public Single<UnsignedAtom> buildAtom(Action action) {
 		final Observable<Action> allActions = this.collectActionAndEffects(action);
 		final Observable<SpunParticle> statelessParticles = allActions.flatMap(a ->
-			Observable
-				.fromIterable(this.statelessActionToParticlesMappers)
-				.flatMap(mapper -> mapper.mapToParticles(a))
+				Observable
+						.fromIterable(this.statelessActionToParticlesMappers)
+						.flatMap(mapper -> mapper.mapToParticles(a))
 		);
-		final Observable<SpunParticle> statefulParticles = statefulMappersToParticles(allActions);
+		final Observable<SpunParticle> statefulParticles = this.statefulMappersToParticles(allActions);
 		final Observable<SpunParticle> timestampParticle =
-			Observable.just(SpunParticle.up(new TimestampParticle(System.currentTimeMillis())));
+				Observable.just(SpunParticle.up(new TimestampParticle(System.currentTimeMillis())));
 
 		return Observable.concat(statelessParticles, statefulParticles, timestampParticle)
-			.<List<SpunParticle>>scanWith(
-				ArrayList::new,
-				(a, b) -> Stream.concat(a.stream(), Stream.of(b)).collect(Collectors.toList())
-			)
-			.lastOrError()
-			.map(particles -> {
-				List<SpunParticle> allParticles = new ArrayList<>(particles);
-				allParticles.addAll(feeMapper.map(particles, universe, getMyPublicKey()));
-				return allParticles;
-			})
-			.map(particles -> new UnsignedAtom(new Atom(particles)));
+				.<List<SpunParticle>>scanWith(
+						ArrayList::new,
+						(a, b) -> Stream.concat(a.stream(), Stream.of(b)).collect(Collectors.toList())
+				)
+				.lastOrError()
+				.map(particles -> {
+					List<SpunParticle> allParticles = new ArrayList<>(particles);
+					allParticles.addAll(this.feeMapper.map(particles, this.universe, this.getMyPublicKey()));
+					return allParticles;
+				})
+				.map(particles -> new UnsignedAtom(new Atom(Collections.singletonList(ParticleGroup.of(particles)))));
 	}
 
 	private Result buildDisconnectedResult(Action action) {
 		ConnectableObservable<SubmitAtomAction> updates = this.buildAtom(action)
-			.flatMap(identity::sign)
-			.flatMapObservable(ledger.getAtomSubmitter()::submitAtom)
-			.replay();
+				.flatMap(this.identity::sign)
+				.flatMapObservable(this.ledger.getAtomSubmitter()::submitAtom)
+				.replay();
 
 		Completable completable = updates
-			.filter(SubmitAtomResultAction.class::isInstance)
-			.map(SubmitAtomResultAction.class::cast)
-			.firstOrError()
-			.flatMapCompletable(update -> {
-				if (update.getType() == SubmitAtomResultActionType.STORED) {
-					return Completable.complete();
-				} else {
-					final JsonObject errorData = update.getData().getAsJsonObject();
-					final ActionExecutionExceptionBuilder exceptionBuilder = new ActionExecutionExceptionBuilder()
-						.errorData(errorData);
-					atomErrorMappers.stream()
-						.flatMap(errorMapper -> errorMapper.mapAtomErrorToExceptionReasons(update.getAtom(), errorData))
-						.forEach(exceptionBuilder::addReason);
-					return Completable.error(exceptionBuilder.build());
-				}
-			});
+				.filter(SubmitAtomResultAction.class::isInstance)
+				.map(SubmitAtomResultAction.class::cast)
+				.firstOrError()
+				.flatMapCompletable(update -> {
+					if (update.getType() == SubmitAtomResultActionType.STORED) {
+						return Completable.complete();
+					} else {
+						JsonElement data = update.getData();
+						final JsonObject errorData = data == null ? null : data.getAsJsonObject();
+						final ActionExecutionExceptionBuilder exceptionBuilder = new ActionExecutionExceptionBuilder()
+								.errorData(errorData);
+						this.atomErrorMappers.stream()
+								.flatMap(errorMapper -> errorMapper.mapAtomErrorToExceptionReasons(update.getAtom(), errorData))
+								.forEach(exceptionBuilder::addReason);
+						return Completable.error(exceptionBuilder.build());
+					}
+				});
 
 		return new Result(updates, completable);
 	}
@@ -754,7 +757,7 @@ public class RadixApplicationAPI {
 	 */
 	public Completable executeSequentially(Action... actions) {
 		Completable completable = Observable.fromIterable(Arrays.asList(actions))
-			.concatMapCompletable(a -> buildDisconnectedResult(a).connect().toCompletable()).cache();
+				.concatMapCompletable(a -> this.buildDisconnectedResult(a).connect().toCompletable()).cache();
 		completable.subscribe();
 		return completable;
 	}

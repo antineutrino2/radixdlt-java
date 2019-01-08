@@ -8,6 +8,8 @@ import com.radixdlt.client.atommodel.unique.UniqueParticle;
 import com.radixdlt.client.core.atoms.Atom;
 import com.radixdlt.client.core.atoms.particles.RadixResourceIdentifer;
 import com.radixdlt.client.core.atoms.particles.SpunParticle;
+
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AlreadyUsedUniqueIdReasonMapper implements AtomErrorToExceptionReasonMapper {
@@ -15,8 +17,8 @@ public class AlreadyUsedUniqueIdReasonMapper implements AtomErrorToExceptionReas
 	public Stream<ActionExecutionExceptionReason> mapAtomErrorToExceptionReasons(Atom atom, JsonObject errorData) {
 		if (errorData.has("pointerToIssue")) {
 			String particleIndexStr = errorData.get("pointerToIssue").getAsString().substring("#/particles/".length());
-			int particleIndex = Integer.valueOf(particleIndexStr);
-			SpunParticle<?> spunParticle = atom.getSpunParticles().get(particleIndex);
+			int particleIndex = Integer.parseInt(particleIndexStr);
+			SpunParticle<?> spunParticle = atom.spunParticles().collect(Collectors.toList()).get(particleIndex);
 			if (spunParticle.getParticle() instanceof UniqueParticle) {
 				UniqueParticle uniqueParticle = (UniqueParticle) spunParticle.getParticle();
 				IdentifiableQuark identifiableQuark = uniqueParticle.getQuarkOrError(IdentifiableQuark.class);

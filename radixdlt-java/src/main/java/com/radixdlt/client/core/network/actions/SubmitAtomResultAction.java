@@ -5,6 +5,7 @@ import com.radixdlt.client.core.atoms.Atom;
 import com.radixdlt.client.core.network.RadixNode;
 import com.radixdlt.client.core.network.jsonrpc.RadixJsonRpcClient.NodeAtomSubmissionState;
 import com.radixdlt.client.core.network.jsonrpc.RadixJsonRpcClient.NodeAtomSubmissionUpdate;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -29,9 +30,9 @@ public class SubmitAtomResultAction implements SubmitAtomAction {
 
 		public static SubmitAtomResultActionType from(NodeAtomSubmissionState nodeAtomSubmissionState) {
 			return Arrays.stream(SubmitAtomResultActionType.values())
-				.filter(t -> nodeAtomSubmissionState == t.mapsTo)
-				.findAny()
-				.orElseThrow(() -> new IllegalArgumentException("Unable to find match for " + nodeAtomSubmissionState));
+					.filter(t -> nodeAtomSubmissionState == t.mapsTo)
+					.findAny()
+					.orElseThrow(() -> new IllegalArgumentException("Unable to find match for " + nodeAtomSubmissionState));
 		}
 	}
 
@@ -60,10 +61,11 @@ public class SubmitAtomResultAction implements SubmitAtomAction {
 
 	/**
 	 * The end result type of the atom submission
+	 *
 	 * @return The end result type
 	 */
 	public SubmitAtomResultActionType getType() {
-		return type;
+		return this.type;
 	}
 
 	@Override
@@ -87,6 +89,6 @@ public class SubmitAtomResultAction implements SubmitAtomAction {
 
 	@Override
 	public String toString() {
-		return "SUBMIT_ATOM_RESULT " + uuid + " " + atom.getHid() + " " + node + " " + type;
+		return "SUBMIT_ATOM_RESULT " + this.uuid + " " + this.atom.getHid() + " " + this.node + " " + this.type;
 	}
 }

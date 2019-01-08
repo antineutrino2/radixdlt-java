@@ -31,12 +31,16 @@ public class SpunParticle<T extends Particle> extends SerializableObject {
 		return new SpunParticle<>(particle, Spin.DOWN);
 	}
 
+	public static <T extends Particle> SpunParticle<T> of(T particle, Spin spin) {
+		return new SpunParticle<>(particle, spin);
+	}
+
 	public Spin getSpin() {
-		return spin;
+		return this.spin;
 	}
 
 	public T getParticle() {
-		return particle;
+		return this.particle;
 	}
 
 	@JsonProperty("spin")
